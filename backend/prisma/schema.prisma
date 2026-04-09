@@ -1,0 +1,29 @@
+generator client {
+  provider = "prisma-client-js"
+  url      = env("DATABASE_URL")
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Url {
+  id          Int      @id @default(autoincrement())
+  originalUrl String
+  customUrl   String   @unique
+  expireDate  DateTime
+  isPublic    Boolean  @default(true)
+  password    String?
+  authorId    Int?
+  author      User?    @relation("CreatedUrls", fields: [authorId], references: [id])
+  sharedWith  User[]   @relation("SharedUrls")
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  username        String   @unique
+  password    String
+  createdUrls Url[]    @relation("CreatedUrls")
+  sharedUrls  Url[]    @relation("SharedUrls")
+}
