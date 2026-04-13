@@ -1,5 +1,4 @@
-import { PrismaService } from '@/prisma.service';
-import { Body, Controller, Get, Param, Post, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Redirect, Req } from '@nestjs/common';
 import type { CreateShortUrlDTO } from './Dto/create-short-url.dto';
 import { UrlService } from './url.service';
 
@@ -7,21 +6,30 @@ import { UrlService } from './url.service';
 export class UrlController {
     constructor(private urlService : UrlService) { }
 
-    // this endpoint is for redirecting user to the original url when they request to the custom url.
     @Get(':shortUrl')
-    async GetShortUrl(@Param('shortUrl') shortUrl: string) {
-        console.log(shortUrl)
-        return shortUrl
+    @Redirect()
+    async RedirectToOriginalUrl(@Param('shortUrl') shortUrl: string, @Body('password') password? : string) {
+        const originalUrl = await this.urlService.RedirectToOriginalUrl(shortUrl);
+
+        return {
+            url: originalUrl,
+            statusCode: 302,
+        };
     }
 
     @Get('details/:shortUrl')
     async GetShortUrlDetails(@Param('shortUrl') shortUrl: string) {
-        
+        return await this.urlService.GetShortUrlDetails(shortUrl);
     }
 
     @Post('create')
     async CreateShortUrl(@Req() req, @Body() dto: CreateShortUrlDTO) {
-        return await this.urlService.CreateShortUrl(req,dto)
+        return await this.urlService.CreateShortUrl(req,dto);
+    }
+
+    @Delete(':shortUrl')
+    async DeleteShortUrl(@Req() req,@Param('shortUrl') shortUrl : string) {
+        return await this.urlService.DeleteShortUrl(req,shortUrl);
     }
 
 }
