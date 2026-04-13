@@ -76,11 +76,11 @@ export class UrlService {
             throw new UnauthorizedException("You can't do it.")
         }
 
-        if(!this.checkIfOwns(shortUrl,userId)) {
+        if(!await this.checkIfOwns(shortUrl,userId)) {
             throw new UnauthorizedException("You can't do it.")
         }
 
-        this.prisma.url.delete({where : {customUrl : shortUrl}});
+        await this.prisma.url.delete({where : {customUrl : shortUrl}});
 
         return "Url " + shortUrl + " deleted successfully."
     }
@@ -100,6 +100,7 @@ export class UrlService {
     }
 
     private isExpired(expireDate: Date): boolean {
+        // will check if already exists
         return expireDate.getTime() < Date.now();
     }
 }

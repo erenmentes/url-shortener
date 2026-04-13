@@ -1,6 +1,7 @@
-import { Body, Controller, Delete, Get, Param, Post, Redirect, Req } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Post, Query, Redirect, Req, UseGuards } from '@nestjs/common';
 import type { CreateShortUrlDTO } from './Dto/create-short-url.dto';
 import { UrlService } from './url.service';
+import { UrlCreationGuard } from '@/guards/UrlCreation.guard';
 
 @Controller('url')
 export class UrlController {
@@ -8,8 +9,8 @@ export class UrlController {
 
     @Get(':shortUrl')
     @Redirect()
-    async RedirectToOriginalUrl(@Param('shortUrl') shortUrl: string, @Body('password') password? : string) {
-        const originalUrl = await this.urlService.RedirectToOriginalUrl(shortUrl);
+    async RedirectToOriginalUrl(@Param('shortUrl') shortUrl: string, @Query('password') password? : string) {
+        const originalUrl = await this.urlService.RedirectToOriginalUrl(shortUrl,password);
 
         return {
             url: originalUrl,
@@ -22,6 +23,7 @@ export class UrlController {
         return await this.urlService.GetShortUrlDetails(shortUrl);
     }
 
+    @UseGuards(UrlCreationGuard)
     @Post('create')
     async CreateShortUrl(@Req() req, @Body() dto: CreateShortUrlDTO) {
         return await this.urlService.CreateShortUrl(req,dto);

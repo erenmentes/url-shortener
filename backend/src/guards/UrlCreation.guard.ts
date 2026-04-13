@@ -27,7 +27,7 @@ export class UrlCreationGuard implements CanActivate {
             });
 
             request.user = {
-                id : payload.id
+                id: payload.sub ?? payload.id,
             }
         } catch {
             request.user = undefined;
