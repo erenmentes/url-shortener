@@ -1,29 +1,38 @@
 import { PrismaService } from '@/prisma.service';
 import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateShortUrlDTO } from './Dto/create-short-url.dto';
+import Redis from "ioredis";
 
 @Injectable()
 export class UrlService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: PrismaService, private redis: Redis) { }
 
     async RedirectToOriginalUrl(shortUrl: string, password?: string) {
-        const url = await this.prisma.url.findFirst({ where: { customUrl: shortUrl } })
+        const cacheKey = `url:${shortUrl}`;
+        let urlData: any;
 
-        if (!url) throw new NotFoundException();
+        const cached = await this.redis.get(cacheKey);
+        if (cached) {
+            urlData = JSON.parse(cached);
+        } else {
+            urlData = await this.prisma.url.findFirst({ where: { customUrl: shortUrl } });
 
-        if (this.isExpired(url.expireDate)) {
+            if (!urlData) throw new NotFoundException();
+
+            if (!this.isExpired(new Date(urlData.expireDate))) {
+                await this.redis.set(cacheKey, JSON.stringify(urlData), 'EX', 60);
+            }
+        }
+
+        if (this.isExpired(new Date(urlData.expireDate))) {
             throw new NotFoundException("URL expired.");
         }
 
-        if (!url.isPublic) {
-            if (url.password == password) {
-                return url.originalUrl
-            } else {
-                throw new UnauthorizedException("Wrong password.")
-            }
-        } else {
-            return url.originalUrl
+        if (!urlData.isPublic && urlData.password !== password) {
+            throw new UnauthorizedException("Wrong password.");
         }
+
+        return urlData.originalUrl;
     }
 
     async GetShortUrlDetails(shortUrl: string) {
@@ -71,6 +80,7 @@ export class UrlService {
 
     async DeleteShortUrl(req, shortUrl: string) {
         const userId = req.user?.id;
+        const cacheKey = `url:${shortUrl}`;
 
         if (!userId) {
             throw new UnauthorizedException("You can't do it.")
@@ -81,6 +91,7 @@ export class UrlService {
         }
 
         await this.prisma.url.delete({ where: { customUrl: shortUrl } });
+        await this.redis.del(cacheKey)
 
         return "Url " + shortUrl + " deleted successfully."
     }
