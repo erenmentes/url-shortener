@@ -29,7 +29,7 @@ export class UrlService {
     async GetShortUrlDetails(shortUrl: string) {
         const shortUrlDetails = await this.prisma.url.findFirst({ where: { customUrl: shortUrl } });
 
-        if(!shortUrlDetails) {
+        if (!shortUrlDetails) {
             throw new NotFoundException("Url not found.")
         }
 
@@ -58,7 +58,7 @@ export class UrlService {
         const createdUrl = await this.prisma.url.create({
             data: {
                 originalUrl: dto.originalUrl,
-                customUrl: customUrl ?? this.generateShortCode(),
+                customUrl: customUrl ?? await this.generateShortCode(),
                 isPublic: dto.isPublic,
                 password: dto.password,
                 expireDate: expireDate,
@@ -69,28 +69,46 @@ export class UrlService {
         return createdUrl;
     }
 
-    async DeleteShortUrl(req, shortUrl : string) {
+    async DeleteShortUrl(req, shortUrl: string) {
         const userId = req.user?.id;
 
         if (!userId) {
             throw new UnauthorizedException("You can't do it.")
         }
 
-        if(!await this.checkIfOwns(shortUrl,userId)) {
+        if (!await this.checkIfOwns(shortUrl, userId)) {
             throw new UnauthorizedException("You can't do it.")
         }
 
-        await this.prisma.url.delete({where : {customUrl : shortUrl}});
+        await this.prisma.url.delete({ where: { customUrl: shortUrl } });
 
         return "Url " + shortUrl + " deleted successfully."
     }
 
-    private generateShortCode(): string {
-        return Math.random().toString(36).substring(2, 8);
+    private async generateShortCode(): Promise<string> {
+        let isExists = true;
+        let shortCode = "";
+
+        while (isExists) {
+            shortCode = Math.random().toString(36).substring(2, 8);
+            const found = await this.checkIfAlreadyExists("customUrl", shortCode);
+            if (!found) isExists = false;
+        }
+
+        return shortCode;
     }
 
-    private async checkIfOwns(shortUrl : string,userId : number) {
-        const url = await this.prisma.url.findFirst({where : {customUrl : shortUrl}})
+    private async checkIfAlreadyExists(fieldName: string, value: any) {
+        const isFound = await this.prisma.url.findFirst({
+            where: {
+                [fieldName]: value
+            }
+        });
+        return isFound;
+    }
+
+    private async checkIfOwns(shortUrl: string, userId: number) {
+        const url = await this.prisma.url.findFirst({ where: { customUrl: shortUrl } })
 
         if (url?.authorId != userId) {
             return false
@@ -100,7 +118,6 @@ export class UrlService {
     }
 
     private isExpired(expireDate: Date): boolean {
-        // will check if already exists
         return expireDate.getTime() < Date.now();
     }
 }
