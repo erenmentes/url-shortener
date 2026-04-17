@@ -130,15 +130,6 @@ curl -X DELETE http://localhost:3000/url/<shortUrl> \
   -H "Authorization: Bearer <TOKEN>"
 ```
 
-## Is the project “done”?
-
-The backend core flow (create → redirect, Prisma, Redis cache, JWT) looks complete. Typical remaining items before calling it “production-ready”:
-
-- `frontend/` is empty (if a UI is part of the scope)
-- Secret management (`.env` should not be committed; especially `JWT_SECRET`)
-- Redis/Postgres configuration via environment variables (avoid hardcoding host/port)
-- Docker Compose / deployment documentation (optional, but commonly expected)
-
 ---
 
 # URL Shortener (NestJS + Prisma + Redis) — Türkçe
@@ -272,12 +263,3 @@ curl -I http://localhost:3000/url/<shortUrl>
 curl -X DELETE http://localhost:3000/url/<shortUrl> \
   -H "Authorization: Bearer <TOKEN>"
 ```
-
-## “Proje bitmiş mi?” hızlı değerlendirme
-
-Backend tarafında core akış (create → redirect, Prisma, Redis cache, JWT) tamamlanmış görünüyor. “Bitmiş/teslim edilebilir” sayılması için genelde şu eksikler kapatılır:
-
-- `frontend/` boş (UI hedefleniyorsa)
-- Secret’ların yönetimi (`.env` repo’da olmamalı, `JWT_SECRET` gibi)
-- Redis/Postgres config’lerinin environment ile parametrik hale gelmesi (host/port hardcode olmaması)
-- Docker Compose / deploy dokümantasyonu (opsiyonel ama çok beklenen)
