@@ -1,11 +1,11 @@
 import { PrismaService } from '@/prisma.service';
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateShortUrlDTO } from './Dto/create-short-url.dto';
 import Redis from "ioredis";
 
 @Injectable()
 export class UrlService {
-    constructor(private prisma: PrismaService, private redis: Redis) { }
+    constructor(private prisma: PrismaService, @Inject("REDIS") private redis : Redis) { }
 
     async RedirectToOriginalUrl(shortUrl: string, password?: string) {
         const cacheKey = `url:${shortUrl}`;
